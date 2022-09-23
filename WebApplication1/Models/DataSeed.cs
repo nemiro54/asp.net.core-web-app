@@ -11,17 +11,16 @@ public class DataSeed
             serviceProvider.GetRequiredService<
                 DbContextOptions<WebApplication1Context>>());
 
-        if (context.users.Any())
+        if (context.Users.Any())
         {
             return;
         }
 
-        context.users.AddRange(
+        context.Users.AddRange(
             new User()
             {
                 Name = "admin_john",
                 Email = "admin@gmail.com",
-                Role = Role.Admin,
                 RegistrationDate = DateTime.Parse("2022-9-20"),
                 LastLoginDate = DateTime.Now
             },
@@ -30,7 +29,6 @@ public class DataSeed
             {
                 Name = "Katy",
                 Email = "katy@yahoo.com",
-                Role = Role.User,
                 RegistrationDate = DateTime.Parse("2022-9-21"),
                 LastLoginDate = DateTime.Now
             }

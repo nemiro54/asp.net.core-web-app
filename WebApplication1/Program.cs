@@ -2,24 +2,31 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication1.Models;
 using Microsoft.Extensions.DependencyInjection;
 using WebApplication1.Data;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<WebApplication1Context>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("WebApplication1Context") ??
+    options.UseNpgsql(builder.Configuration.GetConnectionString("WebApplication1Context") ??
                       throw new InvalidOperationException("Connection string 'WebApplication1Context' not found.")));
+
+// builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+//     .AddEntityFrameworkStores<WebApplication1Context>();
+
+builder.Services.AddIdentity<User, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<WebApplication1Context>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    
-    DataSeed.Initialize(services);
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     
+//     DataSeed.Initialize(services);
+// }
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -34,10 +41,13 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();;
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// app.MapRazorPages();
 
 app.Run();

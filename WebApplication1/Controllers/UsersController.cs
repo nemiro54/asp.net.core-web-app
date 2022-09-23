@@ -22,20 +22,20 @@ namespace WebApplication1.Controllers
         // GET: UsersController
         public async Task<IActionResult> Index()
         {
-            return _context.users != null
-                ? View(await _context.users.ToListAsync())
+            return _context.Users != null
+                ? View(await _context.Users.ToListAsync())
                 : Problem("Entity set 'WebApplication1Context.User'  is null.");
         }
 
         // GET: UsersController/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.users == null)
+            if (id == null || _context.Users == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.users
+            var user = await _context.Users
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
@@ -71,12 +71,12 @@ namespace WebApplication1.Controllers
         // GET: UsersController/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.users == null)
+            if (id == null || _context.Users == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -125,12 +125,12 @@ namespace WebApplication1.Controllers
         // GET: UsersController/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.users == null)
+            if (id == null || _context.Users == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.users
+            var user = await _context.Users
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (user == null)
             {
@@ -145,15 +145,15 @@ namespace WebApplication1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.users == null)
+            if (_context.Users == null)
             {
                 return Problem("Entity set 'WebApplication1Context.User'  is null.");
             }
 
-            var user = await _context.users.FindAsync(id);
+            var user = await _context.Users.FindAsync(id);
             if (user != null)
             {
-                _context.users.Remove(user);
+                _context.Users.Remove(user);
             }
 
             await _context.SaveChangesAsync();
@@ -162,7 +162,7 @@ namespace WebApplication1.Controllers
 
         private bool UserExists(int id)
         {
-            return (_context.users?.Any(e => e.Id == id)).GetValueOrDefault();
+            return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
