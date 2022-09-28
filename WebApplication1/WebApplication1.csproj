@@ -40,10 +40,15 @@
 
     <ItemGroup>
         <Content Remove="Views\HelloWorld\indexx.cshtml" />
+        <Content Include=".circleci\config.yml" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Areas\Identity\Pages\Account" />
     </ItemGroup>
+
+    <Target Name="PrePublishTarget" AfterTargets="Publish">
+        <Exec Command="dotnet ef database update" />
+    </Target>
 
 </Project>

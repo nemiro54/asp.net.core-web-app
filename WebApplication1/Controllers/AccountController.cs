@@ -76,7 +76,7 @@ public class AccountController : Controller
                 {
                     return Redirect(model.ReturnUrl);
                 }
-                user.LastLoginDate = DateTime.Now.ToUniversalTime();
+                // user.LastLoginDate = DateTime.Now.ToUniversalTime();
                 // await _userManager.UpdateAsync(user);
                 return RedirectToAction("Index", "Home");
             }

@@ -14,9 +14,10 @@ public class User : IdentityUser
     
     [Display(Name = "Registration Date")]
     [DataType(DataType.Date)]
-    
     public DateTime RegistrationDate { get; set; }
+    
     [Display(Name = "Last Login Date")]
     [DataType(DataType.Date)]
     public DateTime LastLoginDate { get; set; }
+    
 }
