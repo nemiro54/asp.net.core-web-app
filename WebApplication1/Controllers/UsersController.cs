@@ -2,167 +2,166 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 using WebApplication1.Models;
+using WebApplication1.ViewModels;
 
 namespace WebApplication1.Controllers
 {
     public class UsersController : Controller
     {
-        private readonly WebApplication1Context _context;
+        private readonly UserManager<User> _userManager;
+        private readonly SignInManager<User> _signInManager;
 
-        public UsersController(WebApplication1Context context)
+        public UsersController(UserManager<User> userManager, SignInManager<User> signInManager)
         {
-            _context = context;
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
-        // GET: UsersController
-        public async Task<IActionResult> Index()
-        {
-            return _context.Users != null
-                ? View(await _context.Users.ToListAsync())
-                : Problem("Entity set 'WebApplication1Context.User'  is null.");
-        }
+        [Authorize]
+        public IActionResult Index() => View(_userManager.Users.ToList());
 
-        // GET: UsersController/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null || _context.Users == null)
-            {
-                return NotFound();
-            }
+        [Authorize]
+        public IActionResult Create() => View();
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
-        }
-
-        // GET: UsersController/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: UsersController/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Email,Role,RegistrationDate")] User user)
+        [Authorize]
+        public async Task<IActionResult> Create(CreateUserViewModel model)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-
-            return View(user);
-        }
-
-        // GET: UsersController/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null || _context.Users == null)
-            {
-                return NotFound();
-            }
-
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
-        }
-
-        // POST: UsersController/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Email,Role,RegistrationDate")] User user)
-        {
-            if (id != user.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
+                User user = new User
                 {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
+                    Email = model.Email,
+                    UserName = model.Email,
+                    RegistrationDate = DateTime.Now.ToUniversalTime(),
+                    LastLoginDate = DateTime.Now.ToUniversalTime()
+                };
+                var result = await _userManager.CreateAsync(user, model.Password);
+                if (result.Succeeded)
+                {
+                    return RedirectToAction("Index");
                 }
-                catch (DbUpdateConcurrencyException)
+                foreach (var error in result.Errors)
                 {
-                    if (!UserExists(user.Id))
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+            }
+
+            return View(model);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Delete(string[] selectedUsers)
+        {
+            foreach (var str in selectedUsers)
+            {
+                User user = await _userManager.FindByNameAsync(str);
+                if (user != null)
+                {
+                    if (User.Identity.Name.Equals(user.UserName))
                     {
-                        return NotFound();
+                        await _signInManager.SignOutAsync();
+                    }
+                    IdentityResult result = await _userManager.DeleteAsync(user);
+                }
+            }
+            if (_userManager.FindByNameAsync(User.Identity.Name).Status.Equals("block"))
+            {
+                return Redirect("~/Account/Logout");
+            }
+            return RedirectToAction("Index");
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(string id)
+        {
+            User user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            ChangePasswordViewModel model = new ChangePasswordViewModel { Id = user.Id, Email = user.Email };
+            return View(model);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                User user = await _userManager.FindByIdAsync(model.Id);
+                if (user != null)
+                {
+                    IdentityResult result =
+                        await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+                    if (result.Succeeded)
+                    {
+                        return RedirectToAction("Index");
                     }
                     else
                     {
-                        throw;
+                        foreach (var error in result.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
                     }
                 }
-
-                return RedirectToAction(nameof(Index));
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "User not found");
+                }
             }
 
-            return View(user);
+            return View(model);
         }
 
-        // GET: UsersController/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        [Authorize]
+        public async Task<IActionResult> Block(string[] selectedUsers)
         {
-            if (id == null || _context.Users == null)
+            foreach (var str in selectedUsers)
             {
-                return NotFound();
+                User user = await _userManager.FindByNameAsync(str);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                user.Status = "block";
+                await _userManager.UpdateAsync(user);
+                if (user.Status.Equals("block") && User.Identity.Name.Equals(user.UserName))
+                {
+                    await _signInManager.SignOutAsync();
+                }
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
+            return RedirectToAction("Index");
         }
 
-        // POST: UsersController/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        [Authorize]
+        public async Task<IActionResult> UnBlock(string[] selectedUsers)
         {
-            if (_context.Users == null)
+            foreach (var str in selectedUsers)
             {
-                return Problem("Entity set 'WebApplication1Context.User'  is null.");
+                User user = await _userManager.FindByNameAsync(str);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                user.Status = "active";
+                await _userManager.UpdateAsync(user);
             }
 
-            var user = await _context.Users.FindAsync(id);
-            if (user != null)
-            {
-                _context.Users.Remove(user);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool UserExists(int id)
-        {
-            return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
+            return RedirectToAction("Index");
         }
     }
 }

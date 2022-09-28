@@ -1,5 +1,4 @@
-﻿appsettings.json
-**/.dockerignore
+﻿**/.dockerignore
 **/.env
 **/.git
 **/.gitignore

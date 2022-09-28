@@ -13,9 +13,8 @@ namespace WebApplication1.Data
         public WebApplication1Context (DbContextOptions<WebApplication1Context> options)
             : base(options)
         {
-            // Database.EnsureCreated();
         }
-
-        public new DbSet<User> Users { get; set; } = default!;
+        
+        public DbSet<User> AspNetUsers { get; set; } = default!;
     }
 }
